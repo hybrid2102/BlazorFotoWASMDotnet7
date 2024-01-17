@@ -1,0 +1,66 @@
+﻿@page "/dashboard"
+@page "/dashboard/create" 
+@layout AdminLayout
+@inject NavigationManager NavigationManager
+@inject HttpClient HttpClient
+
+<h3>Dashboard</h3>
+<NavLink  class="btn btn-info my-3" @onclick="Creating"> Crea Foto</NavLink>
+
+<h2>stai per creare una pizza ? : @IsCreating</h2>
+
+@if (IsCreating)
+{
+    <EditForm Model="newFoto" OnSubmit="SalvaEntita">
+        <label>Inserisci nome</label>
+        <InputText @bind-Value="newFoto.Name"></InputText>
+
+        <label>Inserisci descrizione</label>
+        <InputText @bind-Value="newFoto.Description"></InputText>
+
+        <button type="submit" class="btn btn-primary">Salva</button>
+    </EditForm>
+} 
+@if (NavigationManager.Uri.EndsWith("/dashboard/create"))
+{
+    <h2>Create</h2>
+}
+
+@code {
+    public bool IsCreating { get; set; } = false;
+    private string? currentUrl;
+    private string? baseUrl;
+    public Foto newFoto = new Foto();
+
+    public void Creating()
+    {
+        IsCreating = true;
+    }
+
+    public async Task SalvaEntita()
+    {
+        baseUrl = "/api/foto/";
+        string apiUrl = $"{baseUrl}createfoto";
+
+        try
+        {
+            var response = await HttpClient.PostAsJsonAsync(apiUrl, newFoto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("successo");
+                // Reset form 
+                newFoto = new Foto();
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception: {ex.Message}");
+        }
+    }
+}

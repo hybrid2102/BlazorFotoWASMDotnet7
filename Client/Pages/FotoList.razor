@@ -1,0 +1,83 @@
+﻿@page "/foto"
+@page "/foto/{id:int}"
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@inject IConfiguration Configuration 
+
+
+<PageTitle>Foto</PageTitle>
+
+<div class="d-flex flex-wrap gap-5">
+   @if (foto == null)
+    { 
+        @if (Fotos != null && result)
+        {
+            @foreach (Foto foto in Fotos.Fotos)
+            {
+                <div class="d-flex flex-column gap-3 align-items-center text-center">
+                    <FotoCard Name="@foto.Name"
+                              Description="@foto.Description"
+                              Img="@foto.ImagePath"
+                              Id="@foto.Id"
+                              Text="Info"/>
+                </div>
+            }
+        }
+        else if (!result)
+        {
+            <p>Non ci sono foto prova a ricaricare la pagina</p>
+            <NavLink class="btn btn-success" @onclick="(e) => NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: false)">Ricarica</NavLink>
+
+        }
+        else
+        {
+            <Loading/>
+        }
+    }
+    else
+    {
+        <FotoCard Name="@foto.Name"
+                  Description="@foto.Description"
+                  Img="@foto.ImagePath"
+                  Goback=true
+                  Text="Torna indietro"/>
+    }
+</div>
+
+@code{
+    [Parameter]
+    public int id { get; set; }
+    private FotoResponse? Fotos;
+    private Foto? foto;
+    private string? baseUrl;
+    private bool result = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        baseUrl = "https://localhost:7285/api/foto/";
+
+        string currentUrl = NavigationManager.Uri;
+
+        if (currentUrl.EndsWith("/foto"))
+        {
+            await LoadFotos();
+            if (Fotos?.Fotos.Count == 0) result = false;
+        }
+        else if (currentUrl.Contains("/foto/"))
+        {
+            await LoadFotoById();
+        }
+    }
+
+    private async Task LoadFotos(string? search = "", int page = 1)
+    {
+        string apiUrl = $"{baseUrl}getfotos?page={page}&search={search}";
+        Fotos = await HttpClient.GetFromJsonAsync<FotoResponse>(apiUrl);
+
+    }
+
+    private async Task LoadFotoById()
+    {
+        foto = await HttpClient.GetFromJsonAsync<Foto>($"{baseUrl}getfoto/{id}");
+    }
+}
