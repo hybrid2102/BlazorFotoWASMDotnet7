@@ -1,46 +1,47 @@
 ﻿@page "/dashboard"
-@page "/dashboard/create" 
 @layout AdminLayout
 @inject NavigationManager NavigationManager
 @inject HttpClient HttpClient
 
 <h3>Dashboard</h3>
-<NavLink  class="btn btn-info my-3" @onclick="Creating"> Crea Foto</NavLink>
-
-<h2>stai per creare una pizza ? : @IsCreating</h2>
+<NavLink class="btn btn-info me-3 my-3" @onclick="()=> IsCreating = true"> Crea Foto</NavLink>
 
 @if (IsCreating)
 {
-    <EditForm Model="newFoto" OnSubmit="SalvaEntita">
-        <label>Inserisci nome</label>
-        <InputText @bind-Value="newFoto.Name"></InputText>
+    <button type="button" @onclick="Reset" class="btn btn-danger">Annulla</button>
 
-        <label>Inserisci descrizione</label>
-        <InputText @bind-Value="newFoto.Description"></InputText>
+    <EditForm Model="@newFoto" OnValidSubmit="@CreateEntity">
+        <DataAnnotationsValidator />
+
+        <div class="form-group w-75 my-4">
+            <label for="name">Inserisci nome</label>
+            <InputText @bind-Value="newFoto.Name" id="name" class="form-control" />
+            <ValidationMessage For="@(()=>newFoto.Name)" />
+        </div>
+
+        <div class="form-group w-75 my-4">
+            <label for="description">Inserisci descrizione</label>
+            <InputText @bind-Value="newFoto.Description" id="description" class="form-control" />
+            <ValidationMessage For="@(()=>newFoto.Description)" />
+        </div>
+
+        <ValidationSummary />
 
         <button type="submit" class="btn btn-primary">Salva</button>
     </EditForm>
-} 
-@if (NavigationManager.Uri.EndsWith("/dashboard/create"))
-{
-    <h2>Create</h2>
 }
+
+
 
 @code {
     public bool IsCreating { get; set; } = false;
-    private string? currentUrl;
     private string? baseUrl;
     public Foto newFoto = new Foto();
 
-    public void Creating()
+    public async Task CreateEntity()
     {
-        IsCreating = true;
-    }
-
-    public async Task SalvaEntita()
-    {
-        baseUrl = "/api/foto/";
-        string apiUrl = $"{baseUrl}createfoto";
+        baseUrl = "/api/foto";
+        string apiUrl = $"{baseUrl}/createfoto";
 
         try
         {
@@ -49,7 +50,7 @@
             if (response.IsSuccessStatusCode)
             {
                 Console.WriteLine("successo");
-                // Reset form 
+                // Reset form
                 newFoto = new Foto();
             }
             else
@@ -62,5 +63,11 @@
         {
             Console.WriteLine($"Exception: {ex.Message}");
         }
+    }
+
+    public void Reset()
+    {
+        newFoto = new Foto(); 
+        IsCreating = !IsCreating;
     }
 }

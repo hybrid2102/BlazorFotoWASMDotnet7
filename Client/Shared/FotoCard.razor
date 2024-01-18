@@ -1,11 +1,11 @@
 ﻿<div class="cardk">
-    <img src="@Img" class="card-img-top" alt="...">
+    <img src="@Img" class="card-imsg-top" width="@Width">
     <div class="card-body">
-        <h5 class="card-title">@Name</h5>
-        <p class="card-text">@Description</p>
+        <h5 class="card-title">Titolo: @Name</h5>
+        <p class="card-text">Descrizione : @Description</p>
     </div>
     <NavLink class="btn btn-info" href=@GetUrl()>@Text</NavLink>
-    </div>
+</div>
 
 
     @code {
@@ -21,10 +21,11 @@
     public bool? Goback { get; set; }
     [Parameter]
     public int? Id { get; set; }
+    [Parameter]
+    public int? Width { get; set; }
 
     public string GetUrl()
     {
-        if (Id == null) return "/foto";
         return $"/foto/{Id}";
     }
 }

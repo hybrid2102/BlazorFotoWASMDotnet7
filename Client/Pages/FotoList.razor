@@ -1,5 +1,4 @@
 ﻿@page "/foto"
-@page "/foto/{id:int}"
 @inject HttpClient HttpClient
 @inject NavigationManager NavigationManager
 @inject IConfiguration Configuration 
@@ -8,40 +7,29 @@
 <PageTitle>Foto</PageTitle>
 
 <div class="d-flex flex-wrap gap-5">
-   @if (foto == null)
-    { 
-        @if (Fotos != null && result)
+    @if (Fotos != null && result)
+    {
+        @foreach (Foto foto in Fotos.Fotos)
         {
-            @foreach (Foto foto in Fotos.Fotos)
-            {
-                <div class="d-flex flex-column gap-3 align-items-center text-center">
-                    <FotoCard Name="@foto.Name"
-                              Description="@foto.Description"
-                              Img="@foto.ImagePath"
-                              Id="@foto.Id"
-                              Text="Info"/>
-                </div>
-            }
+            <div class="d-flex flex-column gap-3 align-items-center text-center">
+                <FotoCard Name="@foto.Name"
+                            Description="@foto.Description"
+                            Img="@foto.ImagePath"
+                            Id="@foto.Id"
+                          Text="Info" />
+            </div>
         }
-        else if (!result)
-        {
-            <p>Non ci sono foto prova a ricaricare la pagina</p>
-            <NavLink class="btn btn-success" @onclick="(e) => NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: false)">Ricarica</NavLink>
-
-        }
-        else
-        {
-            <Loading/>
-        }
+    }
+    else if (!result)
+    {
+        <p>Non ci sono foto, prova a ricaricare la pagina</p>
+        <NavLink class="btn btn-success" @onclick="(e) => NavigationManager.NavigateTo(NavigationManager.Uri)">Ricarica</NavLink>
     }
     else
     {
-        <FotoCard Name="@foto.Name"
-                  Description="@foto.Description"
-                  Img="@foto.ImagePath"
-                  Goback=true
-                  Text="Torna indietro"/>
+        <Loading />
     }
+    
 </div>
 
 @code{
@@ -58,15 +46,8 @@
 
         string currentUrl = NavigationManager.Uri;
 
-        if (currentUrl.EndsWith("/foto"))
-        {
-            await LoadFotos();
-            if (Fotos?.Fotos.Count == 0) result = false;
-        }
-        else if (currentUrl.Contains("/foto/"))
-        {
-            await LoadFotoById();
-        }
+        await LoadFotos();
+        if (Fotos?.Fotos.Count == 0) result = false;
     }
 
     private async Task LoadFotos(string? search = "", int page = 1)
@@ -76,8 +57,8 @@
 
     }
 
-    private async Task LoadFotoById()
+    public void GetUrl(int id)
     {
-        foto = await HttpClient.GetFromJsonAsync<Foto>($"{baseUrl}getfoto/{id}");
+        NavigationManager.NavigateTo($"/foto/{id}");
     }
 }

@@ -9,8 +9,8 @@ main {
 }
 
 .sidebar {
-    background: rgb(2,0,36);
-    background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,121,29,1) 17%, rgba(7,137,114,1) 46%, rgba(6,174,93,1) 62%, rgba(5,100,181,1) 81%, rgba(0,212,255,1) 100%);
+    background: rgb(43, 56, 76);
+    background: linear-gradient(90deg, rgba(43, 56, 76, 1) 0%, rgba(56, 92, 125, 1) 17%, rgba(61, 108, 148, 1) 46%, rgba(70, 122, 162, 1) 62%, rgba(47, 94, 141, 1) 81%, rgba(44, 121, 141, 1) 100%);
 }
 
 .top-row {
