@@ -3,6 +3,7 @@
 @inject NavigationManager NavigationManager
 @inject HttpClient HttpClient
 
+
 <h3>Dashboard</h3>
 <NavLink class="btn btn-info me-3 my-3" @onclick="()=> IsCreating = true"> Crea Foto</NavLink>
 
@@ -27,16 +28,67 @@
 
         <ValidationSummary />
 
-        <button type="submit" class="btn btn-primary">Salva</button>
+        <button type="submit" class="btn mb-3 btn-primary">Salva</button>
     </EditForm>
 }
+
+<table class="table table-dark table-hover">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (result && fotos?.Fotos != null)
+        {
+            @foreach (var foto in fotos.Fotos)
+            {
+                <tr>
+                    <td>@foto.Id</td>
+                    <td>@foto.Name</td>
+                    <td>@foto.Description</td>
+                    <td>
+                        <button @onclick="() => Delete(foto.Id)" type="button" class="btn btn-danger">elimina</button>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <Loading/>
+            </tr>
+        }
+    </tbody>
+
+</table>
 
 
 
 @code {
     public bool IsCreating { get; set; } = false;
-    private string? baseUrl;
+    private string? baseUrl = "https://localhost:7285/api/foto/";
     public Foto newFoto = new Foto();
+    public FotoResponse? fotos { get; set; }
+    private bool result = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        string currentUrl = NavigationManager.Uri;
+
+        await LoadFotos();
+        if (fotos?.Fotos.Count == 0) result = false;
+    }
+
+    private async Task LoadFotos(string? search = "", int page = 1)
+    {
+        string apiUrl = $"{baseUrl}getfotos?page={page}&search={search}";
+        fotos = await HttpClient.GetFromJsonAsync<FotoResponse>(apiUrl);
+
+    }
 
     public async Task CreateEntity()
     {
@@ -50,8 +102,11 @@
             if (response.IsSuccessStatusCode)
             {
                 Console.WriteLine("successo");
-                // Reset form
                 newFoto = new Foto();
+                IsCreating = false;
+
+                // Ricarica i dati dopo la creazione dell'entità
+                await LoadFotos();
             }
             else
             {
@@ -70,4 +125,31 @@
         newFoto = new Foto(); 
         IsCreating = !IsCreating;
     }
+
+
+    public async Task Delete(int id)
+    {
+        string apiUrl = $"{baseUrl}deletefoto/{id}";
+
+        try
+        {
+            var response = await HttpClient.DeleteAsync(apiUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"Foto con ID {id} eliminata con successo");
+                await LoadFotos(); // Ricarica i dati dopo l'eliminazione dell'entità
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Errore durante l'eliminazione: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Eccezione durante l'eliminazione: {ex.Message}");
+        }
+    }
+
 }

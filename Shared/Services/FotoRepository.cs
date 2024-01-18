@@ -18,7 +18,7 @@ namespace BlazorFotoWASMDotnet7.Shared.Services
             {
                 FotoResponse fotoResponse = new FotoResponse();
                 IQueryable<Foto> query = _context.Foto.AsQueryable();
-                int pageSize = 10;
+                int pageSize = 30;
                 int totalItems;
 
                 if (!string.IsNullOrEmpty(search))
@@ -33,7 +33,8 @@ namespace BlazorFotoWASMDotnet7.Shared.Services
                                         .Take(pageSize)
                                         .ToList();
 
-                totalItems = fotos.Count();
+                totalItems = _context.Foto.Count(); 
+
                 int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
                 fotoResponse.Fotos = fotos;
@@ -76,9 +77,17 @@ namespace BlazorFotoWASMDotnet7.Shared.Services
         public bool DeleteFoto(int id)
         {
             Foto? fotoDelete = _context.Foto.Find(id);
-            _context.Foto.Remove(fotoDelete);
-            _context.SaveChanges();
-            return true;
+
+            if (fotoDelete != null)
+            {
+                _context.Foto.Remove(fotoDelete);
+                _context.SaveChanges();
+                return true;
+            }
+            else
+            {
+                return false; // Foto non trovata
+            }
         }
 
     }

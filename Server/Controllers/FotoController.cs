@@ -77,14 +77,20 @@ namespace BlazorFotoWASMDotnet7.Server.Controllers
         }
 
         [HttpPost("{id}")]
-        public async Task<ActionResult<bool>> DeleteFoto(int id)
+        public async Task<ActionResult> DeleteFoto(int id)
         {
             bool success = _repo.DeleteFoto(id);
 
-            if (success) return Ok($"Foto con id {id} cancellata");
-
-            else return NotFound($"Foto con id {id} non trovata");
+            if (success)
+            {
+                return Ok($"Foto con id {id} cancellata");
+            }
+            else
+            {
+                return NotFound($"Foto con id {id} non trovata");
+            }
         }
+
 
     }
 }
