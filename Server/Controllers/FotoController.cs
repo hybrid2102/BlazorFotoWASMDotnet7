@@ -47,19 +47,31 @@ namespace BlazorFotoWASMDotnet7.Server.Controllers
         }
 
         [HttpPost]
-        public async Task<FotoCreateResponse> CreateFoto([FromBody] Foto foto)
+        public async Task<FotoCreateResponse> CreateFoto([FromForm] Foto foto, [FromForm] IFormFile imageFile)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    _repo.CreateFoto(foto);
-                    FotoCreateResponse response = new FotoCreateResponse()
+                    using (var memoryStream = new MemoryStream())
                     {
-                        Foto = foto,
-                        Message = $"Foto {foto.Name} creata con successo"
-                    };
-                    return response;
+                        imageFile.CopyTo(memoryStream);
+                        byte[] imageBytes = memoryStream.ToArray();
+
+                        _repo.CreateFoto(new Foto
+                        {
+                            Name = foto.Name,
+                            Description = foto.Description,
+                            ImageFile = imageBytes
+                        });
+
+                        FotoCreateResponse response = new FotoCreateResponse()
+                        {
+                            Foto = foto,
+                            Message = $"Foto {foto.Name} creata con successo"
+                        };
+                        return response;
+                    }
                 }
                 else
                 {
@@ -76,7 +88,7 @@ namespace BlazorFotoWASMDotnet7.Server.Controllers
             }
         }
 
-        [HttpPost("{id}")]
+        [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteFoto(int id)
         {
             bool success = _repo.DeleteFoto(id);

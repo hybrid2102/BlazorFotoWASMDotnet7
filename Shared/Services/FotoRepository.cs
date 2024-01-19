@@ -55,8 +55,10 @@ namespace BlazorFotoWASMDotnet7.Shared.Services
             return await _context.Foto.FindAsync(id);
         }
 
-        public bool CreateFoto(Foto foto)
+        public bool CreateFoto(Foto foto, byte[] imageBytes)
         {
+            foto.ImageFile = imageBytes;
+
             _context.Foto.Add(foto);
             _context.SaveChanges();
             return true;

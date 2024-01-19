@@ -3,109 +3,150 @@
 @inject NavigationManager NavigationManager
 @inject HttpClient HttpClient
 
+<div @onclick="() => IsModal=false">
+    <h3>Dashboard</h3>
+    <NavLink class="btn btn-info me-3 my-3" @onclick="() => IsCreating = true"> Crea Foto</NavLink>
 
-<h3>Dashboard</h3>
-<NavLink class="btn btn-info me-3 my-3" @onclick="()=> IsCreating = true"> Crea Foto</NavLink>
+    @if (IsModal)
+    {
+        <Modal Title="Eliminazione"
+               EntitaEliminare=@deleteTextModal
+               OnParentMethod="(() => Delete(IdToDelete))" />
+    }
 
-@if (IsCreating)
-{
-    <button type="button" @onclick="Reset" class="btn btn-danger">Annulla</button>
+    @if (IsCreating)
+    {
+        <button type="button" @onclick="Reset" class="btn btn-danger">Annulla</button>
 
-    <EditForm Model="@newFoto" OnValidSubmit="@CreateEntity">
-        <DataAnnotationsValidator />
+        <EditForm Model="@newFoto" OnValidSubmit="@CreateEntity">
+            <DataAnnotationsValidator />
 
-        <div class="form-group w-75 my-4">
-            <label for="name">Inserisci nome</label>
-            <InputText @bind-Value="newFoto.Name" id="name" class="form-control" />
-            <ValidationMessage For="@(()=>newFoto.Name)" />
-        </div>
+            <div class="form-group w-75 my-4">
+                <label for="name">Inserisci nome</label>
+                <InputText @bind-Value="newFoto.Name" id="name" class="form-control" />
+                <ValidationMessage For="@(()=>newFoto.Name)" />
+            </div>
 
-        <div class="form-group w-75 my-4">
-            <label for="description">Inserisci descrizione</label>
-            <InputText @bind-Value="newFoto.Description" id="description" class="form-control" />
-            <ValidationMessage For="@(()=>newFoto.Description)" />
-        </div>
+            <div class="form-group w-75 my-4">
+                <label for="description">Inserisci descrizione</label>
+                <InputText @bind-Value="newFoto.Description" id="description" class="form-control" />
+                <ValidationMessage For="@(()=>newFoto.Description)" />
+            </div>
 
-        <ValidationSummary />
+            <div class="form-group w-75 my-4">
+                <label for="image">Carica immagine</label>
+                <InputFile OnChange="@HandleFileChange" id="image" class="form-control" />
+                <ValidationMessage For="@(()=>newFoto.ImageFile)" />
+            </div>
 
-        <button type="submit" class="btn mb-3 btn-primary">Salva</button>
-    </EditForm>
-}
+            <ValidationSummary />
 
-<table class="table table-dark table-hover">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (result && fotos?.Fotos != null)
-        {
-            @foreach (var foto in fotos.Fotos)
-            {
+            <button type="submit" @onclick:stopPropagation=true class="btn mb-3 btn-primary">Salva</button>
+        </EditForm>
+    }
+
+     @if (IsLoading)
+    {
+        <Loading />
+    }
+    else if (fotos?.Fotos != null && fotos.Fotos.Count > 0)
+    {
+        <table class="table table-dark table-hover">
+            <thead>
                 <tr>
-                    <td>@foto.Id</td>
-                    <td>@foto.Name</td>
-                    <td>@foto.Description</td>
-                    <td>
-                        <button @onclick="() => Delete(foto.Id)" type="button" class="btn btn-danger">elimina</button>
-                    </td>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Action</th>
                 </tr>
-            }
-        }
-        else
-        {
-            <tr>
-                <Loading/>
-            </tr>
-        }
-    </tbody>
+            </thead>
+            <tbody>
+                @foreach (var foto in fotos.Fotos)
+                {
+                    <tr>
+                        <td>@foto.Id</td>
+                        <td>@foto.Name</td>
+                        <td>@foto.Description</td>
+                        <td>
+                            <button class="btn btn-success">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                                    <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0" />
+                                </svg>
+                            </button>
+                            <button type="button" @onclick:stopPropagation=true class="btn btn-warning">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pen" viewBox="0 0 16 16">
+                                    <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001m-.644.766a.5.5 0 0 0-.707 0L1.95 11.756l-.764 3.057 3.057-.764L14.44 3.854a.5.5 0 0 0 0-.708z" />
+                                </svg>
+                            </button>
+                            <button type="button" @onclick="() => MostraModale(foto.Id, foto.Name)" @onclick:stopPropagation=true class="btn btn-danger">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+                                </svg>
+                            </button>
+                           
+                        </td>
+                  
+                    </tr>
+                }
+            </tbody>
 
-</table>
+        </table>
+    }
+    else
+    {
+        <p>Nessuna foto disponibile.</p>
+    }
+</div>
 
 
 
 @code {
+    private bool result = true;
+    private bool IsLoading { get; set; } = true;
     public bool IsCreating { get; set; } = false;
+    public bool IsModal { get; set; } = false;
     private string? baseUrl = "https://localhost:7285/api/foto/";
     public Foto newFoto = new Foto();
     public FotoResponse? fotos { get; set; }
-    private bool result = true;
+    private string deleteTextModal { get; set; } = "";
+    private int IdToDelete { get; set; } = 0;
+
+    private void HandleFileChange(InputFileChangeEventArgs e)
+    {
+        newFoto.ImageFile = e.File;
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        string currentUrl = NavigationManager.Uri;
-
         await LoadFotos();
-        if (fotos?.Fotos.Count == 0) result = false;
     }
 
     private async Task LoadFotos(string? search = "", int page = 1)
     {
+        IsLoading = true;
         string apiUrl = $"{baseUrl}getfotos?page={page}&search={search}";
         fotos = await HttpClient.GetFromJsonAsync<FotoResponse>(apiUrl);
-
+        IsLoading = false;
     }
 
     public async Task CreateEntity()
     {
-        baseUrl = "/api/foto";
-        string apiUrl = $"{baseUrl}/createfoto";
+        string apiUrl = $"{baseUrl}createfoto";
+        Console.WriteLine(newFoto.Name);
+        Console.WriteLine(newFoto.Description);
+        Console.WriteLine(newFoto.ImageFile);
+        // Console.WriteLine(newFoto.ImagePath);
 
         try
         {
             var response = await HttpClient.PostAsJsonAsync(apiUrl, newFoto);
-
             if (response.IsSuccessStatusCode)
             {
                 Console.WriteLine("successo");
                 newFoto = new Foto();
                 IsCreating = false;
-
-                // Ricarica i dati dopo la creazione dell'entità
                 await LoadFotos();
             }
             else
@@ -130,7 +171,6 @@
     public async Task Delete(int id)
     {
         string apiUrl = $"{baseUrl}deletefoto/{id}";
-
         try
         {
             var response = await HttpClient.DeleteAsync(apiUrl);
@@ -138,7 +178,9 @@
             if (response.IsSuccessStatusCode)
             {
                 Console.WriteLine($"Foto con ID {id} eliminata con successo");
-                await LoadFotos(); // Ricarica i dati dopo l'eliminazione dell'entità
+                await LoadFotos(); 
+                IsModal = false;
+
             }
             else
             {
@@ -151,5 +193,10 @@
             Console.WriteLine($"Eccezione durante l'eliminazione: {ex.Message}");
         }
     }
-
+    public async Task MostraModale(int id,string? entityTODelete)
+    {
+        IsModal = true;
+        IdToDelete = id;
+        deleteTextModal = entityTODelete;
+    }
 }
