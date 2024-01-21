@@ -17,7 +17,8 @@
                             Description="@foto.Description"
                             Img="@foto.ImagePath"
                             Id="@foto.Id"
-                          Text="Info" />
+                            Width="300"
+                            Text="Info" />
             </div>
         }
     }
@@ -36,8 +37,7 @@
 @code{
     [Parameter]
     public int id { get; set; }
-    private FotoResponse? Fotos;
-    private Foto? foto;
+    private FotoResponse? Fotos = new FotoResponse();
     private string? baseUrl;
     private bool result = true;
 
@@ -53,7 +53,7 @@
 
     private async Task LoadFotos(string? search = "", int page = 1)
     {
-        string apiUrl = $"{baseUrl}getfotos?page={page}&search={search}";
+        string apiUrl = $"{baseUrl}getfotos?page={page}&search={search}&publicview=true";
         Fotos = await HttpClient.GetFromJsonAsync<FotoResponse>(apiUrl);
 
     }

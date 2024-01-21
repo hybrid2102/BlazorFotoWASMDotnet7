@@ -5,6 +5,7 @@
 
 <div @onclick="() => IsModal=false">
     <h3>Dashboard</h3>
+    <h3>ho cliccato ? @IsCreating</h3>
     <NavLink class="btn btn-info me-3 my-3" @onclick="() => IsCreating = true"> Crea Foto</NavLink>
 
     @if (IsModal)
@@ -16,33 +17,24 @@
 
     @if (IsCreating)
     {
-        <button type="button" @onclick="Reset" class="btn btn-danger">Annulla</button>
+         <button type="button" @onclick="Reset" class="btn btn-danger">Annulla</button>
 
-        <EditForm Model="@newFoto" OnValidSubmit="@CreateEntity">
-            <DataAnnotationsValidator />
-
-            <div class="form-group w-75 my-4">
-                <label for="name">Inserisci nome</label>
-                <InputText @bind-Value="newFoto.Name" id="name" class="form-control" />
-                <ValidationMessage For="@(()=>newFoto.Name)" />
+        <EditForm Model="@newForm" OnValidSubmit="@CreateEntity">
+            <div>
+                <label for="name">nome</label>
+                <InputText id="name" @bind-Value="newFoto.Name" />
             </div>
-
-            <div class="form-group w-75 my-4">
-                <label for="description">Inserisci descrizione</label>
-                <InputText @bind-Value="newFoto.Description" id="description" class="form-control" />
-                <ValidationMessage For="@(()=>newFoto.Description)" />
+            <div>
+                <label for="description">descrizione</label>
+                <InputText id="description" @bind-Value="newFoto.Description" />
             </div>
-
-            <div class="form-group w-75 my-4">
-                <label for="image">Carica immagine</label>
-                <InputFile OnChange="@HandleFileChange" id="image" class="form-control" />
-                <ValidationMessage For="@(()=>newFoto.ImageFile)" />
+            <div>
+                <label for="image">image</label>
+                <InputFile id="image" @bind-Value="newForm.Image" />
             </div>
-
-            <ValidationSummary />
-
-            <button type="submit" @onclick:stopPropagation=true class="btn mb-3 btn-primary">Salva</button>
+            <button type="submit">salva</button>
         </EditForm>
+
     }
 
      @if (IsLoading)
@@ -57,6 +49,8 @@
                     <th>ID</th>
                     <th>Name</th>
                     <th>Description</th>
+                    <th>Visible</th>
+                    <th>Image</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -67,6 +61,8 @@
                         <td>@foto.Id</td>
                         <td>@foto.Name</td>
                         <td>@foto.Description</td>
+                        <td>@(foto.IsVisible ? "Si" : "No")</td>
+                        <td>@(foto.ImageFile is null ? "No" : "Si")</td>
                         <td>
                             <button class="btn btn-success">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle" viewBox="0 0 16 16">
@@ -107,16 +103,13 @@
     private bool IsLoading { get; set; } = true;
     public bool IsCreating { get; set; } = false;
     public bool IsModal { get; set; } = false;
-    private string? baseUrl = "https://localhost:7285/api/foto/";
+    private string baseUrl = "https://localhost:7285/api/foto/";
+    public FotoForm newForm = new FotoForm();
     public Foto newFoto = new Foto();
     public FotoResponse? fotos { get; set; }
     private string deleteTextModal { get; set; } = "";
     private int IdToDelete { get; set; } = 0;
 
-    private void HandleFileChange(InputFileChangeEventArgs e)
-    {
-        newFoto.ImageFile = e.File;
-    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -134,17 +127,15 @@
     public async Task CreateEntity()
     {
         string apiUrl = $"{baseUrl}createfoto";
-        Console.WriteLine(newFoto.Name);
-        Console.WriteLine(newFoto.Description);
-        Console.WriteLine(newFoto.ImageFile);
-        // Console.WriteLine(newFoto.ImagePath);
 
         try
         {
-            var response = await HttpClient.PostAsJsonAsync(apiUrl, newFoto);
+            newForm.Foto = newFoto;
+            var response = await HttpClient.PostAsJsonAsync(apiUrl, newForm);
             if (response.IsSuccessStatusCode)
             {
                 Console.WriteLine("successo");
+                newForm = new FotoForm();
                 newFoto = new Foto();
                 IsCreating = false;
                 await LoadFotos();
@@ -152,8 +143,17 @@
             else
             {
                 var errorMessage = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error: {errorMessage}");
+
+                if (!string.IsNullOrWhiteSpace(errorMessage))
+                {
+                    Console.WriteLine($"Error: {errorMessage}");
+                }
+                else
+                {
+                    Console.WriteLine("Errore sconosciuto durante la richiesta.");
+                }
             }
+
         }
         catch (Exception ex)
         {
@@ -163,7 +163,7 @@
 
     public void Reset()
     {
-        newFoto = new Foto(); 
+        newForm = new FotoForm();
         IsCreating = !IsCreating;
     }
 

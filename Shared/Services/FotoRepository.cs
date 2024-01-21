@@ -12,7 +12,7 @@ namespace BlazorFotoWASMDotnet7.Shared.Services
             _context = context;
         }
 
-        public async Task<FotoResponse> GetFotos(string? search = "", int page = 1)
+        public async Task<FotoResponse> GetFotos(string? search = "", int page = 1, bool publicview = false)
         {
             try
             {
@@ -33,7 +33,9 @@ namespace BlazorFotoWASMDotnet7.Shared.Services
                                         .Take(pageSize)
                                         .ToList();
 
-                totalItems = _context.Foto.Count(); 
+                if(publicview == true) fotos = fotos.Where(f => f.IsVisible == true).ToList();
+
+                totalItems = fotos.Count(); 
 
                 int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
@@ -50,19 +52,20 @@ namespace BlazorFotoWASMDotnet7.Shared.Services
             }
 
         }
+
+
         public async Task<Foto> GetFoto(int id)
         {
             return await _context.Foto.FindAsync(id);
         }
 
-        public bool CreateFoto(Foto foto, byte[] imageBytes)
+        public bool CreateFoto(Foto foto)
         {
-            foto.ImageFile = imageBytes;
-
             _context.Foto.Add(foto);
             _context.SaveChanges();
             return true;
         }
+
         public bool UpdateFoto(Foto foto, int id)
         {
             Foto? fotoEdit = _context.Foto.Find(id);

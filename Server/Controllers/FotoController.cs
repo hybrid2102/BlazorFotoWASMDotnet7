@@ -2,6 +2,7 @@
 using BlazorFotoWASMDotnet7.Shared.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace BlazorFotoWASMDotnet7.Server.Controllers
 {
@@ -17,11 +18,11 @@ namespace BlazorFotoWASMDotnet7.Server.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<FotoResponse>> GetFotos(string? search="", int page = 1)
+        public async Task<ActionResult<FotoResponse>> GetFotos(string? search="", int page = 1, bool publicview = false)
         {
             try
             {
-                FotoResponse? result = await _repo.GetFotos(search, page);
+                FotoResponse result = await _repo.GetFotos(search, page, publicview);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -46,36 +47,49 @@ namespace BlazorFotoWASMDotnet7.Server.Controllers
             }
         }
 
+
         [HttpPost]
-        public async Task<FotoCreateResponse> CreateFoto([FromForm] Foto foto, [FromForm] IFormFile imageFile)
+        public async Task<FotoCreateResponse> CreateFoto([FromForm] FotoForm fotoForm)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    using (var memoryStream = new MemoryStream())
+                    using (MemoryStream stream = new MemoryStream())
                     {
-                        imageFile.CopyTo(memoryStream);
-                        byte[] imageBytes = memoryStream.ToArray();
-
-                        _repo.CreateFoto(new Foto
+                        byte[] fileBytes;
+                        if (fotoForm.Image != null)
                         {
-                            Name = foto.Name,
-                            Description = foto.Description,
-                            ImageFile = imageBytes
-                        });
-
-                        FotoCreateResponse response = new FotoCreateResponse()
+                            await fotoForm.Image.CopyToAsync(stream);
+                            fileBytes = stream.ToArray();
+                        }
+                        else
                         {
-                            Foto = foto,
-                            Message = $"Foto {foto.Name} creata con successo"
+                            fileBytes = null;
+                        }
+
+                        Foto newFoto = new Foto
+                        {
+                            Name = fotoForm.Foto?.Name,
+                            Description = fotoForm.Foto?.Description,
+                            IsVisible = fotoForm.Foto?.IsVisible ?? false,
+                            ImageFile = fileBytes
+                        };
+
+                        _repo.CreateFoto(newFoto);
+
+                        FotoCreateResponse response = new FotoCreateResponse
+                        {
+                            Foto = newFoto,
+                            Message = $"Foto {fotoForm.Foto?.Name} creata con successo"
                         };
                         return response;
                     }
                 }
                 else
                 {
-                    return new FotoCreateResponse()
+                    // Gestisci il caso in cui il modello non è valido
+                    return new FotoCreateResponse
                     {
                         Message = "Dati non validi"
                     };
@@ -83,10 +97,13 @@ namespace BlazorFotoWASMDotnet7.Server.Controllers
             }
             catch (Exception ex)
             {
-                return new FotoCreateResponse { Message = $"Errore durante la creazione della foto. Dettagli: {ex.Message}" };
-
+                return new FotoCreateResponse
+                {
+                    Message = $"Errore durante la creazione della foto. Dettagli: {ex.Message}"
+                };
             }
         }
+
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteFoto(int id)
