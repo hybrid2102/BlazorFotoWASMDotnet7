@@ -5,7 +5,6 @@
 
 <div @onclick="() => IsModal=false">
     <h3>Dashboard</h3>
-    <h3>ho cliccato ? @IsCreating</h3>
     <NavLink class="btn btn-info me-3 my-3" @onclick="() => IsCreating = true"> Crea Foto</NavLink>
 
     @if (IsModal)
@@ -19,23 +18,34 @@
     {
          <button type="button" @onclick="Reset" class="btn btn-danger">Annulla</button>
 
-        <EditForm Model="@newForm" OnValidSubmit="@CreateEntity">
-            <div class="mb-3 w-50">
-                <label for="name" class="form-label">Nome</label>
-                <InputText id="name" @bind-Value="newFoto.Name" class="form-control" />
-            </div>
-            <div class="mb-3 w-50">
-                <label for="description" class="form-label">Descrizione</label>
-                <InputText id="description" @bind-Value="newFoto.Description" class="form-control" />
-            </div>
-            <div class="mb-3 w-50">
-                <label for="image" class="form-label">Immagine</label>
-                <InputFile id="image" @bind-Value="newForm.Image" OnChange="LoadImage" class="form-control" />
-                <img id="preview" src="@ImageUri" class="mt-2 img-fluid" />
-            </div>
-            <button type="submit" class="btn btn-primary">Salva</button>
-        </EditForm>
+        <EditForm Model="fotoForm" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
 
+            <div>
+                <label for="Name">Nome:</label>
+                <InputText id="Name" @bind-Value="fotoForm.Foto.Name" />
+                <ValidationMessage For="() => fotoForm.Foto.Name" />
+            </div>
+
+            <div>
+                <label for="Description">Descrizione:</label>
+                <InputText id="Description" @bind-Value="fotoForm.Foto.Description" />
+                <ValidationMessage For="() => fotoForm.Foto.Description" />
+            </div>
+
+            <div>
+                <label for="IsVisible">Visibile:</label>
+                <InputCheckbox id="IsVisible" @bind-Value="fotoForm.Foto.IsVisible" />
+            </div>
+
+            <div>
+                <label for="Image">Immagine:</label>
+                <InputFile id="Image" OnChange="HandleFileSelected" accept=".jpg, .jpeg, .png" />
+
+            </div>
+
+            <button type="submit">Salva</button>
+        </EditForm>
 
     }
 
@@ -106,14 +116,15 @@
     public bool IsCreating { get; set; } = false;
     public bool IsModal { get; set; } = false;
     private string baseUrl = "https://localhost:7285/api/foto/";
-    public FotoForm newForm = new FotoForm();
-    public Foto newFoto = new Foto();
+    public Foto? newFoto = new Foto();
+    public FotoForm fotoForm = new FotoForm { Foto = new Foto(), Image = null };
     public FotoResponse? fotos { get; set; }
     private string deleteTextModal { get; set; } = "";
     private int IdToDelete { get; set; } = 0;
     private string ImageUri { get; set; } = "";
+    private IBrowserFile? Imagefile;
 
-     protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
         await LoadFotos();
     }
@@ -126,28 +137,18 @@
         IsLoading = false;
     }
 
-    public async Task CreateEntity()
+    public async Task HandleSubmit()
     {
         string apiUrl = $"{baseUrl}createfoto";
 
         try
         {
-
-            newForm.Foto = newFoto;
-            if (newForm.Image != null)
-            {
-                using (var memoryStream = new MemoryStream())
-                {
-                    await newForm.Image.CopyToAsync(memoryStream);
-                    newFoto.ImageFile = memoryStream.ToArray();
-                }
-            }
-
-            var response = await HttpClient.PostAsJsonAsync(apiUrl, newForm);
+            await PrepareImage();
+            var response = await HttpClient.PostAsJsonAsync(apiUrl, fotoForm);
             if (response.IsSuccessStatusCode)
             {
                 Console.WriteLine("successo");
-                newForm = new FotoForm();
+                fotoForm = new FotoForm();
                 newFoto = new Foto();
                 IsCreating = false;
                 await LoadFotos();
@@ -165,7 +166,6 @@
                     Console.WriteLine("Errore sconosciuto durante la richiesta.");
                 }
             }
-
         }
         catch (Exception ex)
         {
@@ -175,11 +175,11 @@
 
     public void Reset()
     {
-        newForm = new FotoForm();
+        fotoForm = new FotoForm();
         IsCreating = !IsCreating;
     }
 
- 
+
     public async Task Delete(int id)
     {
         string apiUrl = $"{baseUrl}deletefoto/{id}";
@@ -212,25 +212,26 @@
         deleteTextModal = entityTODelete;
     }
 
-    public async Task LoadImage(InputFileChangeEventArgs inputChange)
+    private void HandleFileSelected(InputFileChangeEventArgs e)
     {
-        // Richiedi il file immagine all'input
-        var image = await inputChange.File.RequestImageFileAsync("image/png", 280, 280);
-
-        // Apre uno stream dal file immagine
-        using Stream imageStream = image.OpenReadStream(1024 * 1024 * 10);
-
-        // Crea un MemoryStream per memorizzare i byte dell'immagine
-        using MemoryStream ms = new();
-
-        // Copia il contenuto dello stream dell'immagine nel MemoryStream
-        await imageStream.CopyToAsync(ms);
-
-        // Converte i byte dell'immagine in una stringa di dati URI per l'anteprima
-        ImageUri = $"data:image/png;base64,{Convert.ToBase64String(ms.ToArray())}";
-
-        // Aggiorna il rendering del componente per riflettere i cambiamenti
-        StateHasChanged();
+        Imagefile = e.File;
     }
+
+    private async Task PrepareImage()
+    {
+        if (fotoForm?.Image != null)
+        {
+            using (var stream = new MemoryStream())
+            {
+                await fotoForm.Image.CopyToAsync(stream);
+                fotoForm.Foto.ImageFile = stream.ToArray();
+            }
+        }
+        else
+        {
+            Console.WriteLine("Image is null");
+        }
+    }
+
 
 }
