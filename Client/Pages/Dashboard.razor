@@ -20,20 +20,22 @@
          <button type="button" @onclick="Reset" class="btn btn-danger">Annulla</button>
 
         <EditForm Model="@newForm" OnValidSubmit="@CreateEntity">
-            <div>
-                <label for="name">nome</label>
-                <InputText id="name" @bind-Value="newFoto.Name" />
+            <div class="mb-3 w-50">
+                <label for="name" class="form-label">Nome</label>
+                <InputText id="name" @bind-Value="newFoto.Name" class="form-control" />
             </div>
-            <div>
-                <label for="description">descrizione</label>
-                <InputText id="description" @bind-Value="newFoto.Description" />
+            <div class="mb-3 w-50">
+                <label for="description" class="form-label">Descrizione</label>
+                <InputText id="description" @bind-Value="newFoto.Description" class="form-control" />
             </div>
-            <div>
-                <label for="image">image</label>
-                <InputFile id="image" @bind-Value="newForm.Image" />
+            <div class="mb-3 w-50">
+                <label for="image" class="form-label">Immagine</label>
+                <InputFile id="image" @bind-Value="newForm.Image" OnChange="LoadImage" class="form-control" />
+                <img id="preview" src="@ImageUri" class="mt-2 img-fluid" />
             </div>
-            <button type="submit">salva</button>
+            <button type="submit" class="btn btn-primary">Salva</button>
         </EditForm>
+
 
     }
 
@@ -109,9 +111,9 @@
     public FotoResponse? fotos { get; set; }
     private string deleteTextModal { get; set; } = "";
     private int IdToDelete { get; set; } = 0;
+    private string ImageUri { get; set; } = "";
 
-
-    protected override async Task OnInitializedAsync()
+     protected override async Task OnInitializedAsync()
     {
         await LoadFotos();
     }
@@ -130,7 +132,17 @@
 
         try
         {
+
             newForm.Foto = newFoto;
+            if (newForm.Image != null)
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    await newForm.Image.CopyToAsync(memoryStream);
+                    newFoto.ImageFile = memoryStream.ToArray();
+                }
+            }
+
             var response = await HttpClient.PostAsJsonAsync(apiUrl, newForm);
             if (response.IsSuccessStatusCode)
             {
@@ -167,7 +179,7 @@
         IsCreating = !IsCreating;
     }
 
-
+ 
     public async Task Delete(int id)
     {
         string apiUrl = $"{baseUrl}deletefoto/{id}";
@@ -199,4 +211,26 @@
         IdToDelete = id;
         deleteTextModal = entityTODelete;
     }
+
+    public async Task LoadImage(InputFileChangeEventArgs inputChange)
+    {
+        // Richiedi il file immagine all'input
+        var image = await inputChange.File.RequestImageFileAsync("image/png", 280, 280);
+
+        // Apre uno stream dal file immagine
+        using Stream imageStream = image.OpenReadStream(1024 * 1024 * 10);
+
+        // Crea un MemoryStream per memorizzare i byte dell'immagine
+        using MemoryStream ms = new();
+
+        // Copia il contenuto dello stream dell'immagine nel MemoryStream
+        await imageStream.CopyToAsync(ms);
+
+        // Converte i byte dell'immagine in una stringa di dati URI per l'anteprima
+        ImageUri = $"data:image/png;base64,{Convert.ToBase64String(ms.ToArray())}";
+
+        // Aggiorna il rendering del componente per riflettere i cambiamenti
+        StateHasChanged();
+    }
+
 }
