@@ -18,9 +18,14 @@ namespace BlazorFotoWASMDotnet7.Shared.DB
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
        
+            //if (!optionsBuilder.IsConfigured)
+            //{
+            //    string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            //    optionsBuilder.UseSqlServer(connectionString, b => b.MigrationsAssembly("BlazorFotoWASMDotnet7.Server")); //dato che abbiamo db in shared
+            //}
             if (!optionsBuilder.IsConfigured)
             {
-                string connectionString = _configuration.GetConnectionString("DefaultConnection");
+                string connectionString = _configuration.GetConnectionString("OfficeConnection");
                 optionsBuilder.UseSqlServer(connectionString, b => b.MigrationsAssembly("BlazorFotoWASMDotnet7.Server")); //dato che abbiamo db in shared
             }
 
