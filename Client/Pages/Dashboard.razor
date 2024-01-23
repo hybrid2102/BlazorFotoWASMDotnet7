@@ -144,6 +144,10 @@
         try
         {
             //lettura + invio al server
+            var content = new MultipartFormDataContent();
+            content.Add(new StringContent(newFoto.Name), "Name");
+            content.Add(new StringContent(newFoto.Description), "Description");
+            content.Add(new StringContent(newFoto.IsVisible.ToString()), "IsVisible");
 
             // Invia la richiesta HTTP con HttpClient
             var response = await HttpClient.PostAsync(apiUrl, content);
