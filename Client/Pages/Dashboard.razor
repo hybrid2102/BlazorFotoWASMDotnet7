@@ -122,7 +122,11 @@
     private string deleteTextModal { get; set; } = "";
     private int IdToDelete { get; set; } = 0;
     private string ImageUri { get; set; } = "";
-    private byte[]? jolly { get; set; } 
+    private byte[]? jolly { get; set; }
+
+
+    private StreamContent? fileContent;
+    private IBrowserFile? file;
 
     protected override async Task OnInitializedAsync()
     {
@@ -145,9 +149,11 @@
         {
             //lettura + invio al server
             var content = new MultipartFormDataContent();
-            content.Add(new StringContent(newFoto.Name), "Name");
-            content.Add(new StringContent(newFoto.Description), "Description");
-            content.Add(new StringContent(newFoto.IsVisible.ToString()), "IsVisible");
+            // content.Add(new StringContent(newFoto.Name), "Name");
+            // content.Add(new StringContent(newFoto.Description), "Description");
+            // content.Add(new StringContent(newFoto.IsVisible.ToString()), "IsVisible");
+
+            content.Add(content: fileContent, name: "myFile", fileName: file.Name);
 
             // Invia la richiesta HTTP con HttpClient
             var response = await HttpClient.PostAsync(apiUrl, content);
@@ -228,7 +234,7 @@
         long maxFileSize = 1024 * 1024 * 15;
 
         //lettura + scrittura client side
-        IBrowserFile file = await e.File.RequestImageFileAsync("image/jpg", 640, 480);
+        file = await e.File.RequestImageFileAsync("image/jpg", 640, 480);
         using Stream fileStream = file.OpenReadStream(maxFileSize);
         using MemoryStream ms = new MemoryStream();
 
@@ -237,5 +243,11 @@
         ImageUri = $"data:image/jpeg;base64,{Convert.ToBase64String(ms.ToArray())}"; //per preview
 
         var k = ms.ToArray();
+
+
+
+        fileContent = new StreamContent(file.OpenReadStream(maxFileSize));
+
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
     }
 }
