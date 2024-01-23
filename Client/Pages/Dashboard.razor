@@ -18,33 +18,33 @@
     {
          <button type="button" @onclick="Reset" class="btn btn-danger">Annulla</button>
 
-        <EditForm Model="fotoForm" OnValidSubmit="HandleSubmit">
+
+        <EditForm Model="@fotoForm" OnValidSubmit="@HandleSubmit">
             <DataAnnotationsValidator />
 
-            <div>
-                <label for="Name">Nome:</label>
-                <InputText id="Name" @bind-Value="fotoForm.Foto.Name" />
-                <ValidationMessage For="() => fotoForm.Foto.Name" />
+            <div class="form-group">
+                <label for="name">Nome:</label>
+                <InputText id="name" @bind-Value="fotoForm.Foto.Name" class="form-control" />
+                <ValidationMessage For="@(() => fotoForm.Foto.Name)" />
             </div>
 
-            <div>
-                <label for="Description">Descrizione:</label>
-                <InputText id="Description" @bind-Value="fotoForm.Foto.Description" />
-                <ValidationMessage For="() => fotoForm.Foto.Description" />
+            <div class="form-group">
+                <label for="description">Descrizione:</label>
+                <InputText id="description" @bind-Value="fotoForm.Foto.Description" class="form-control" />
+                <ValidationMessage For="@(() => fotoForm.Foto.Description)" />
             </div>
 
-            <div>
-                <label for="IsVisible">Visibile:</label>
-                <InputCheckbox id="IsVisible" @bind-Value="fotoForm.Foto.IsVisible" />
+            <div class="form-group">
+                <label for="isVisible">Visibile:</label>
+                <InputCheckbox id="isVisible" @bind-Value="fotoForm.Foto.IsVisible" />
             </div>
 
-            <div>
-                <label for="Image">Immagine:</label>
-                <InputFile id="Image" OnChange="HandleFileSelected" accept=".jpg, .jpeg, .png" />
-
+            <div class="form-group">
+                <label for="image">Carica immagine:</label>
+                <InputFile id="image" OnChange="@HandleFileChange" />
             </div>
-
-            <button type="submit">Salva</button>
+            <img src="@ImageUri"/>
+            <button type="submit" class="btn btn-primary">Salva</button>
         </EditForm>
 
     }
@@ -122,7 +122,7 @@
     private string deleteTextModal { get; set; } = "";
     private int IdToDelete { get; set; } = 0;
     private string ImageUri { get; set; } = "";
-    private IBrowserFile? Imagefile;
+    private byte[]? jolly { get; set; } 
 
     protected override async Task OnInitializedAsync()
     {
@@ -143,8 +143,12 @@
 
         try
         {
-            await PrepareImage();
-            var response = await HttpClient.PostAsJsonAsync(apiUrl, fotoForm);
+            //lettura + invio al server
+
+            // Invia la richiesta HTTP con HttpClient
+            var response = await HttpClient.PostAsync(apiUrl, content);
+
+
             if (response.IsSuccessStatusCode)
             {
                 Console.WriteLine("successo");
@@ -212,26 +216,22 @@
         deleteTextModal = entityTODelete;
     }
 
-    private void HandleFileSelected(InputFileChangeEventArgs e)
+    private async Task HandleFileChange(InputFileChangeEventArgs e)
     {
-        Imagefile = e.File;
+        //Client:IBrowserFile
+        //Server:IFormFile
+
+        long maxFileSize = 1024 * 1024 * 15;
+
+        //lettura + scrittura client side
+        IBrowserFile file = await e.File.RequestImageFileAsync("image/jpg", 640, 480);
+        using Stream fileStream = file.OpenReadStream(maxFileSize);
+        using MemoryStream ms = new MemoryStream();
+
+        await fileStream.CopyToAsync(ms); // Il di fileStream viene copiato in ms.
+
+        ImageUri = $"data:image/jpeg;base64,{Convert.ToBase64String(ms.ToArray())}"; //per preview
+
+        var k = ms.ToArray();
     }
-
-    private async Task PrepareImage()
-    {
-        if (fotoForm?.Image != null)
-        {
-            using (var stream = new MemoryStream())
-            {
-                await fotoForm.Image.CopyToAsync(stream);
-                fotoForm.Foto.ImageFile = stream.ToArray();
-            }
-        }
-        else
-        {
-            Console.WriteLine("Image is null");
-        }
-    }
-
-
 }
